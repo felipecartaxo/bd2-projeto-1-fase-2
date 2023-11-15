@@ -1,6 +1,6 @@
 -- Criação das tabelas
 CREATE TABLE Fornecedor( -- ok
-	idForn SERIAL PRIMARY KEY,
+	idForn SERIAL PRIMARY KEY, -- Considere colocar o campo 'idForn' como FK em outras tabelas para futuras funcionalidades
 	nomeForn VARCHAR(40) NOT NULL,
 	cepForn CHAR(8) NOT NULL,
 	emailForn VARCHAR(40) UNIQUE NOT NULL,
@@ -33,11 +33,11 @@ CREATE TABLE Cliente( -- ok
 
 CREATE TABLE Pedido(
 	idPed SERIAL PRIMARY KEY,
-	idProd SERIAL NOT NULL,
-	idCli SERIAL NOT NULL, 
+	idProd INT NOT NULL,
+	idCli INT NOT NULL, 
 	dataPed DATE NOT NULL,
-	quantPed INT NOT NULL,
-	valorPed DECIMAL(5, 2) NOT NULL,
+	quantPed INT NOT NULL DEFAULT 1,
+	valorProd DECIMAL(6, 2) NOT NULL,
 	statusPed VARCHAR(40) NOT NULL, -- Estado atual do pedido (ex.: Se já foi entregue, se está a caminho, se foi coletado pela transportadora, etc...)
 	FOREIGN KEY(idProd) REFERENCES Produto(idProd),
 	FOREIGN KEY(idCli) REFERENCES Cliente(idCli)
@@ -56,83 +56,114 @@ CREATE TABLE Avaliacao(
 
 -- Verificando as tabelas
 SELECT * FROM Fornecedor;
-SELECT * FROM Produto;
 SELECT * FROM Categoria;
-SELECT * FROM Pedido;
+SELECT * FROM Produto;
 SELECT * FROM Cliente;
+SELECT * FROM Pedido;
 SELECT * FROM Avaliacao;
 
 -- Inserindo dados nas tabelas
-INSERT INTO Fornecedor(nome, cep, email, fone, tipoPessoa) VALUES 
+INSERT INTO Fornecedor(nomeForn, cepForn, emailForn, foneForn, tipoForn) VALUES 
 	('TecnoComputers Ltda.', '12345678', 'tecnocomputers@email.com', '123456789', 'J'),
 	('MobileTech Solutions', '87654321', 'mobiletech@email.com', '987654321', 'J'),
 	('Maria Rebeca', '11112222', 'mariarebeca@email.com', '555555555', 'F');
-	
+
 SELECT * FROM Fornecedor;
 
 INSERT INTO Categoria(descCateg) VALUES 
 	('Computadores & Notebooks'),
 	('Celulares & Smartphones'),
 	('Periféricos');
-	
+
 SELECT * FROM Categoria;
 
-INSERT INTO Produto(nome, preco, quantEst, fabricante, idCateg, idPedido) VALUES 
-	('Computador', 4999.99, 5, 'Pichau', 1, 1)
-	('Smartphone', 999.99, 50, 'Apple', 2, 2),
-	('Mouse USB', 29.99, 1000, 'HyperX', 3, 3),
-	('Teclado Wireless', 69.99, 200, 'Logitech', 3, 3);
-	
+INSERT INTO Produto(nomeProd, precoProd, quantProd, idCateg) VALUES 
+	('Computador', 4999.99, 5, 1),
+	('Smartphone', 999.99, 50, 2),
+	('Mouse USB', 29.99, 1000, 3),
+	('Teclado Wireless', 69.99, 200, 3);
+
 SELECT * FROM Produto;
 
-INSERT INTO Pedido(data, quant, valor, situacao, idProd) VALUES 
-	('2023-01-15', 1, 4999.99, 'Em andamento', 1),
-	('2023-02-20', 2, 1999.99, 'Entregue', 2),
-	('2023-03-10', 10, 299.99, 'Em processamento', 3);
-	('2023-03-10', 20, 1399.99, 'Em processamento', 4);
+INSERT INTO Cliente(nomeCli, cepCli, emailCli, foneCli, generoCli) VALUES 
+	('João', '12345678', 'joao@email.com', '111111111', 'M'),
+	('Maria', '87654321', 'maria@email.com', '222222222', 'F'),
+	('Paula', '11112222', 'paula@email.com', '333333333', 'F'),
+	('Marcos', '98345123', 'marcus@email.com', '88889999', 'M');
+
+SELECT * FROM Cliente;
+
+INSERT INTO Pedido(idProd, idCli, dataPed, quantPed, valorProd, statusPed) VALUES 
+	(1, 1, '2023-01-15', 1, 4999.99, 'Em andamento'),
+	(2, 2, '2023-02-20', 2, 1999.99, 'Entregue'),
+	(3, 3, '2023-03-10', 10, 299.99, 'Em processamento'),
+	(3, 3, '2023-03-10', 20, 1399.99, 'Em processamento'),
+	(1, 3, '2023-01-15', 1, 29.99, 'Entregue');
 	
 SELECT * FROM Pedido;
 
-INSERT INTO Cliente(nome, cep, email, fone, genero, idPedido) VALUES 
-	('ClienteA', '12345678', 'clienteA@email.com', '111111111', 'M', 1),
-	('ClienteB', '87654321', 'clienteB@email.com', '222222222', 'F', 2),
-	('ClienteC', '11112222', 'clienteC@email.com', '333333333', 'M', NULL);
-	
-SELECT * FROM Cliente;
-
-INSERT INTO Avaliacao(idProd, idCliente, nota, comentario, data) VALUES 
+INSERT INTO Avaliacao(idProd, idCli, notaAval, comentAval, dataAval) VALUES 
 	(1, 1, 4.5, 'Ótimo produto!', '2023-01-20'),
 	(2, 2, 3.0, 'Apresentou defeito em pouco tempo', '2023-02-25'),
 	(3, 3, 5.0, NULL, '2023-03-15');
-
 
 SELECT * FROM Avaliacao;
 
 -- a) ii. Consultas
 		-- 1 consulta utilizando BETWEEN
-		SELECT p.nome, p.preco, p.quantEst, p.fabricante -- Consulta para verificar os produtos da categoria 'Moda' custando entre 20 e 100 reais
+		SELECT p.nomeProd, p.precoProd, p.quantProd -- Consulta para verificar os produtos da categoria 'Periféricos' custando entre 20 e 50 reais
 		FROM Produto p
 		JOIN Categoria c ON p.idCateg = c.idCateg
-		WHERE c.descCateg = 'Moda' AND p.preco BETWEEN 20 AND 100
-		ORDER BY p.preco;
+		WHERE c.descCateg = 'Periféricos' AND p.precoProd BETWEEN 20 AND 50
+		ORDER BY p.precoProd;
 
 		-- 3 consultas utilizando JOIN
-		SELECT p.idProd, p.nome, c.descCateg as categoria -- Consulta para verificar quais produtos estão na categoria 'Eletrônicos'
+		SELECT p.nomeProd, p.quantProd, p.precoProd, c.descCateg as categoria -- Verifica quais produtos estão na categoria 'Periféricos'
 		FROM Produto p
 		JOIN Categoria c ON p.idCateg = c.idCateg
-		WHERE c.descCateg = 'Eletrônicos';
+		WHERE c.descCateg = 'Periféricos'
+		ORDER BY p.precoProd;
 		
-		SELECT p.nome, p.preco, p.quantEst, p.fabricante -- Consulta para verificar todos os produtos de uma determinada fornecedora
+		SELECT Pedido.idPed, Pedido.idCli, Pedido.dataPed, Pedido.valorProd, Pedido.statusPed -- Verifica todos os pedidos em andamento de um determinado cliente
+		FROM Pedido
+		JOIN Cliente ON Pedido.idCli = Cliente.idCli
+		WHERE Cliente.nomeCli = 'João' AND Pedido.statusPed = 'Em andamento';
+
+		SELECT f.nomeFornp, p.nomeProd, p.precoProd, p.quantProd -- Consulta para verificar todos os produtos de uma determinada fornecedora
 		FROM Produto p
 		JOIN Fornecedor f ON p.fabricante = f.nome
 		WHERE f.idForn = 1;
 		
-		-- falta mais uma com join :s
+		-- 1 consulta com LEFT JOIN
+		SELECT p.idProd, p.nomeProd, p.precoProd, p.quantProd, c.descCateg -- Lista todos os produtos cadastrados na plataforma
+		FROM Produto p
+		LEFT JOIN Categoria c ON p.idCateg = c.idCateg;
 		
+		
+		-- 2 consultas usando GROUP BY
+		SELECT p.nomeProd, COUNT(pe.idPed) AS totalPedidos -- Retorna os produtos mais procurados da plataforma
+		FROM Produto p
+		JOIN Pedido pe ON p.idProd = pe.idProd
+		GROUP BY p.idProd, p.nomeProd
+		ORDER BY totalPedidos DESC
+		LIMIT 1; -- Garante que apenas o produto com mais pedidos seja retornado
+		
+		
+		-- 1 consulta usando UNION/EXCEPT/INTERSECT
+		SELECT nomeCli, foneCli, emailCli -- Encontra clientes cadastrados na plataforma, mas que não fizerem nenhum pedido, com a finalidade de enviar ofertas
+		FROM Cliente
+		EXCEPT
+		SELECT c.nomeCli, c.foneCli, c.emailCli
+		FROM Cliente c
+		JOIN Pedido P ON C.idCli = P.idCli;
+				
 		-- 2 subconsultas
-		SELECT * -- Subconsulta para verificar as avaliações positivas (acima de 4)
+		SELECT idProd, notaAval, comentAval, dataAval -- Subconsulta para verificar as avaliações positivas (acima de 4) com o propósito de recompensar os melhores fornecedores da plataforma
 		FROM Avaliacao
-		WHERE nota IN (SELECT nota FROM Avaliacao WHERE nota > 4);
+		WHERE notaAval IN (SELECT notaAval FROM Avaliacao WHERE notaAval > 4);
 		
+		SELECT nomeCli, -- Levantamento da quantidade de pedidos por cliente cadastrado no sistema
+    	(SELECT COUNT(idPed) FROM Pedido WHERE idCli = Cliente.idCli) AS totalPedidos
+		FROM Cliente;
+-- b) Views
 		
-
