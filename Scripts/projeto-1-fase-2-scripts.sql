@@ -1,59 +1,57 @@
 -- Criação das tabelas
-CREATE TABLE Fornecedor(
+CREATE TABLE Fornecedor( -- ok
 	idForn SERIAL PRIMARY KEY,
-	nome VARCHAR(40) NOT NULL,
-	cep CHAR(8) NOT NULL,
-	email VARCHAR(40) UNIQUE NOT NULL,
-	fone VARCHAR(20) NOT NULL,
-	tipoPessoa CHAR(1) NOT NULL CHECK (tipoPessoa IN ('J', 'F'))
+	nomeForn VARCHAR(40) NOT NULL,
+	cepForn CHAR(8) NOT NULL,
+	emailForn VARCHAR(40) UNIQUE NOT NULL,
+	foneForn VARCHAR(20) NOT NULL,
+	tipoForn CHAR(1) NOT NULL CHECK (tipoForn IN ('J', 'F'))
 );
 
-CREATE TABLE Categoria(
+CREATE TABLE Categoria( -- ok
 	idCateg SERIAL PRIMARY KEY,
 	descCateg VARCHAR(40) NOT NULL
 );
 
-CREATE TABLE Produto(
+CREATE TABLE Produto( -- ok
 	idProd SERIAL PRIMARY KEY,
-	nome VARCHAR(40) NOT NULL,
-	preco NUMERIC NOT NULL,
-	quantEst INT NOT NULL,
-	fabricante VARCHAR(40) NOT NULL,
+	nomeProd VARCHAR(40) NOT NULL,
+	precoProd NUMERIC NOT NULL,
+	quantProd INT NOT NULL DEFAULT 0,
 	idCateg INT NOT NULL,
-	idPedido INT, -- Um produto pode não estar associado a um pedido, logo pode ser null
 	FOREIGN KEY (idCateg) REFERENCES Categoria(idCateg)
 );
 
-CREATE TABLE Pedido(
-	idPedido SERIAL PRIMARY KEY,
-	data DATE NOT NULL,
-	quant INT NOT NULL,
-	valor NUMERIC NOT NULL,
-	situacao VARCHAR(40) NOT NULL, -- Estado atual do pedido (ex.: Se já foi entregue, se está a caminho, se foi coletado pela transportadora, etc...)
-	idProd INT NOT NULL,
-	FOREIGN KEY (idProd) REFERENCES Produto(idProd)
+CREATE TABLE Cliente( -- ok
+	idCli SERIAL PRIMARY KEY,
+	nomeCli VARCHAR(40) NOT NULL,
+	cepCli CHAR(8) NOT NULL,
+	emailCli VARCHAR(40) UNIQUE NOT NULL,
+	foneCli VARCHAR(20) NOT NULL,
+	generoCli CHAR(1) CHECK (generoCli IN ('M', 'F')) -- 'M' para masculino, 'F' para feminino
 );
 
-CREATE TABLE Cliente(
-	idCliente SERIAL PRIMARY KEY,
-	nome VARCHAR(40) NOT NULL,
-	cep CHAR(8) NOT NULL,
-	email VARCHAR(40) UNIQUE NOT NULL,
-	fone VARCHAR(20) NOT NULL,
-	genero CHAR(1) CHECK (genero IN ('M', 'F')), -- 'M' para masculino, 'F' para feminino
-	idPedido INT, -- Permite clientes que ainda não fizeram pedidos
-	FOREIGN KEY (idPedido) REFERENCES Pedido(idPedido)
+CREATE TABLE Pedido(
+	idPed SERIAL PRIMARY KEY,
+	idProd SERIAL NOT NULL,
+	idCli SERIAL NOT NULL, 
+	dataPed DATE NOT NULL,
+	quantPed INT NOT NULL,
+	valorPed DECIMAL(5, 2) NOT NULL,
+	statusPed VARCHAR(40) NOT NULL, -- Estado atual do pedido (ex.: Se já foi entregue, se está a caminho, se foi coletado pela transportadora, etc...)
+	FOREIGN KEY(idProd) REFERENCES Produto(idProd),
+	FOREIGN KEY(idCli) REFERENCES Cliente(idCli)
 );
 
 CREATE TABLE Avaliacao(
+	idAval SERIAL PRIMARY KEY,
 	idProd INT NOT NULL,
-	idCliente INT NOT NULL,
-	nota NUMERIC,
-	comentario VARCHAR(100),
-	data DATE,
-	PRIMARY KEY (idProd, idCliente),
+	idCli INT NOT NULL,
+	notaAval NUMERIC,
+	comentAval TEXT,
+	dataAval DATE NOT NULL,
 	FOREIGN KEY (idProd) REFERENCES Produto(idProd),
-	FOREIGN KEY (idCliente) REFERENCES Cliente(idCliente)
+	FOREIGN KEY (idCli) REFERENCES Cliente(idCli)
 );
 
 -- Verificando as tabelas
