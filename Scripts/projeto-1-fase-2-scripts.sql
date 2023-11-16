@@ -16,7 +16,7 @@ CREATE TABLE Categoria( -- ok
 CREATE TABLE Produto( -- ok
 	idProd SERIAL PRIMARY KEY,
 	nomeProd VARCHAR(40) NOT NULL,
-	precoProd NUMERIC NOT NULL,
+	precoProd DECIMAL(6,2) NOT NULL,
 	quantProd INT NOT NULL DEFAULT 0,
 	idCateg INT NOT NULL,
 	FOREIGN KEY (idCateg) REFERENCES Categoria(idCateg)
@@ -37,7 +37,6 @@ CREATE TABLE Pedido(
 	idCli INT NOT NULL, 
 	dataPed DATE NOT NULL,
 	quantPed INT NOT NULL DEFAULT 1,
-	valorProd DECIMAL(6, 2) NOT NULL,
 	statusPed VARCHAR(40) NOT NULL, -- Estado atual do pedido (ex.: Se já foi entregue, se está a caminho, se foi coletado pela transportadora, etc...)
 	FOREIGN KEY(idProd) REFERENCES Produto(idProd),
 	FOREIGN KEY(idCli) REFERENCES Cliente(idCli)
@@ -66,14 +65,16 @@ SELECT * FROM Avaliacao;
 INSERT INTO Fornecedor(nomeForn, cepForn, emailForn, foneForn, tipoForn) VALUES 
 	('TecnoComputers Ltda.', '12345678', 'tecnocomputers@email.com', '123456789', 'J'),
 	('MobileTech Solutions', '87654321', 'mobiletech@email.com', '987654321', 'J'),
-	('Maria Rebeca', '11112222', 'mariarebeca@email.com', '555555555', 'F');
+	('Maria Rebeca', '11112222', 'mariarebeca@email.com', '555555555', 'F'),
+	('House of Mario', '58054755', 'nintendomario@email.com', '656829475', 'J');
 
 SELECT * FROM Fornecedor;
 
 INSERT INTO Categoria(descCateg) VALUES 
 	('Computadores & Notebooks'),
 	('Celulares & Smartphones'),
-	('Periféricos');
+	('Periféricos'),
+	('Videogames');
 
 SELECT * FROM Categoria;
 
@@ -81,7 +82,8 @@ INSERT INTO Produto(nomeProd, precoProd, quantProd, idCateg) VALUES
 	('Computador', 4999.99, 5, 1),
 	('Smartphone', 999.99, 50, 2),
 	('Mouse USB', 29.99, 1000, 3),
-	('Teclado Wireless', 69.99, 200, 3);
+	('Teclado Wireless', 69.99, 200, 3),
+	('Nintendo Switch',2010.00,10,4);
 
 SELECT * FROM Produto;
 
@@ -93,12 +95,12 @@ INSERT INTO Cliente(nomeCli, cepCli, emailCli, foneCli, generoCli) VALUES
 
 SELECT * FROM Cliente;
 
-INSERT INTO Pedido(idProd, idCli, dataPed, quantPed, valorProd, statusPed) VALUES 
-	(1, 1, '2023-01-15', 1, 4999.99, 'Em andamento'),
-	(2, 2, '2023-02-20', 2, 1999.99, 'Entregue'),
-	(3, 3, '2023-03-10', 10, 299.99, 'Em processamento'),
-	(3, 3, '2023-03-10', 20, 1399.99, 'Em processamento'),
-	(1, 3, '2023-01-15', 1, 29.99, 'Entregue');
+INSERT INTO Pedido(idProd, idCli, dataPed, quantPed, statusPed) VALUES 
+	(1, 1, '2023-01-15', 1, 'Em andamento'),
+	(2, 2, '2023-02-20', 2,  'Entregue'),
+	(3, 3, '2023-03-10', 10,  'Em processamento'),
+	(3, 3, '2023-03-10', 20,  'Em processamento'),
+	(1, 3, '2023-01-15', 1,  'Entregue');
 	
 SELECT * FROM Pedido;
 
@@ -165,5 +167,28 @@ SELECT * FROM Avaliacao;
 		SELECT nomeCli, -- Levantamento da quantidade de pedidos por cliente cadastrado no sistema
     	(SELECT COUNT(idPed) FROM Pedido WHERE idCli = Cliente.idCli) AS totalPedidos
 		FROM Cliente;
--- b) Views
 		
+		SELECT idped AS Id_pedido, quantped AS Quantidade,
+		(SELECT precoprod FROM Produto WHERE idprod = Pedido.idprod) AS Preço,
+		quantped* (SELECT precoprod FROM Produto WHERE idprod = Pedido.idprod) AS total
+		FROM Pedido; -- trás o valor total de cada pedido, baseado no preço do produto e a quantidade do pedido.
+-- b) Views
+	
+	
+
+	
+
+
+
+
+
+select * from pedido;
+
+DROP TABLE Avaliacao;
+DROP TABLE Pedido;
+DROP TABLE Produto;
+DROP TABLE Categoria;
+DROP TABLE Fornecedor;
+DROP TABLE Cliente;
+
+
