@@ -156,8 +156,7 @@ SELECT * FROM Avaliacao;
 		GROUP BY p.idProd, p.nomeProd
 		ORDER BY totalPedidos DESC
 		LIMIT 1; -- Garante que apenas o produto com mais pedidos seja retornado
-		
-		
+				
 		-- 1 consulta usando UNION/EXCEPT/INTERSECT
 		SELECT nomeCli, foneCli, emailCli -- Encontra clientes cadastrados na plataforma, mas que não fizerem nenhum pedido, com a finalidade de enviar ofertas
 		FROM Cliente
@@ -178,35 +177,122 @@ SELECT * FROM Avaliacao;
 		SELECT idped AS Id_pedido, quantped AS Quantidade,
 		(SELECT precoprod FROM Produto WHERE idprod = Pedido.idprod) AS Preço,
 		quantped* (SELECT precoprod FROM Produto WHERE idprod = Pedido.idprod) AS total
-		FROM Pedido; -- traz o valor total de cada pedido, baseado no preço do produto e a quantidade do pedido.
--- b) Views
+		FROM Pedido; -- traz o valor total de cada pedido, baseado no preço do produto e a quantidade do pedido
+		
+		-- b) Views
+		
+		-- View para exibir dados de todos os pedidos em andamento (com a finalidade de acompanhar o fluxo de pedidos e, caso necessário, contatar a fornecedora/transportadora)
+		CREATE OR REPLACE VIEW PedidosEmAndamento AS
+		SELECT
+				p.nomeProd AS "Nome do produto",
+				c.nomeCli AS "Nome do cliente",
+				(p.precoProd * pe.quantPed) AS "Valor total",
+				pe.dataPed AS "Data do pedido",
+				pe.quantPed AS "Quantidade de itens"
+		FROM
+				Pedido pe
+		JOIN Produto p ON pe.idProd = p.idProd
+		JOIN Cliente c ON pe.idCli = c.idCli
+		WHERE
+				pe.statusPed = 'Em andamento';
+				
+		SELECT * FROM PedidosEmAndamento;
+		DROP VIEW PedidosEmAndamento;
+		
+		-- View para exibir dados sobre um pedido com avaliação negativa (visando recompensar o cliente com novas ofertas ou reembolso)
+		CREATE OR REPLACE VIEW AvaliacoesNegativas AS
+		SELECT
+				a.idAval AS "Código da avaliação",
+				a.dataAval AS "Data da avaliação",
+				a.comentAval AS "Comentário",
+				c.nomeCli AS "Nome do cliente",
+				pe.idPed AS "Número do pedido",
+				pe.dataPed AS "Data do pedido"
+		FROM
+				Avaliacao a
+		JOIN Cliente c ON a.idCli = c.idCli
+		JOIN Pedido pe ON a.idPed = pe.idPed -- Necessário setar um relacionamento entre 'Avaliacao' e 'Pedido'
+		JOIN Produto p ON pe.idProd = p.idProd
+		WHERE
+				a.notaAval < 3; -- Considerei como negativa uma avaliação menor do que 3
+		
+		SELECT * FROM AvaliacoesNegativas;
+		DROP VIEW AvaliacoesNegativas;
+		
+		-- View que exibe uma nota fiscal (várias informações do cliente, pedido e dos produtos)
+		CREATE OR REPLACE VIEW NotaFiscal AS
+		SELECT
+				pe.idPed AS "Número do pedido",
+				pe.dataPed AS "Data do pedido",
+				c.nomeCli AS "Nome do cliente",
+				c.emailCli AS "Email",
+				pe.quantPed AS "Quantidade de itens",
+				(p.precoProd * pe.quantPed) AS "Valor total"
+		FROM
+				Pedido pe
+		JOIN Cliente c ON pe.idCli = c.idCli
+		JOIN Produto p ON pe.idProd = p.idProd;
+		
+		SELECT * FROM NotaFiscal;
+		DROP VIEW NotaFiscal;
 	
-	
+		-- View para listar todos os produtos (e suas respectivas categorias), onde também é possível cadastrar novos itens pela própria view
+		CREATE OR REPLACE VIEW ListaProdutos AS
+		SELECT
+				p.idProd AS "ID do Produto",
+				p.nomeProd AS "Nome",
+				p.precoProd AS "Preço",
+				p.quantProd AS "Quantidade em estoque",
+				c.descCateg AS "Categoria"
+		FROM
+				Produto p
+		JOIN Categoria c ON p.idCateg = c.idCateg;
+		
+		SELECT * FROM ListaProdutos;
+		DROP VIEW ListaProdutos;
 
-	
-
-
--- c) Triggers
-
-	CREATE OR REPLACE FUNCTION validar_email()
-	RETURNS TRIGGER AS $$
-	BEGIN
-	  IF TG_TABLE_NAME = 'Cliente' THEN
-	  	-- padrão :  (qualquer letra e numero) + @ + (qualquer letra e numero) + . + (qualquer letra e numero) 
-	  	IF NEW.emailCli ~ E'^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,4}$' THEN
-			RETURN NEW;
-		ELSE
-			RETURN NULL;
-		END IF;
-	  ELSE
-	  	IF NEW.emailForn ~ E'^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,4}$' THEN
-			RETURN NEW;
-		ELSE
-			RETURN NULL;
-		END IF;
-	  END IF;
-	END;
-	$$ LANGUAGE plpgsql;
+		-- Exemplo de inserção na view NovosProdutosComCategoria
+		INSERT INTO NovosProdutosComCategoria("Nome do Produto", "Preço do Produto", "Quantidade do Produto", "Categoria do Produto")
+		VALUES
+				('Novo Produto 1', 25.00, 5, 'Categoria A'),
+				('Novo Produto 2', 35.00, 3, 'Categoria B');
+		-- c) Índices
+		CREATE INDEX idx_idProd ON Produto(idProd); -- Possui valores distintos e é constantemente utilizado com JOIN
+		
+		CREATE INDEX idx_descCateg ON Categoria(descCateg); -- Utilizado em filtros
+		
+		CREATE INDEX idx_precoProd ON Produto(precoProd); -- Também muito utilizado em filtros
+		
+		-- d) Reescrita de consultas
+		-- ???
+		
+		-- e) Funções e procedures
+			-- CREATE OR REPLACE FUNCTION calcular_frete()
+			-- retornaria o dia estimado de entrega do pedido
+			-- inserir a coluna "tipo_frete" na tabela "Pedido"
+			-- "tipo_frete" poderia ser categorizado como A, B ou C
+			-- daí cada tier teria um número x de dias para ser entregue
+				
+		-- f) Triggers
+			CREATE OR REPLACE FUNCTION validar_email()
+			RETURNS TRIGGER AS $$
+			BEGIN
+				IF TG_TABLE_NAME = 'Cliente' THEN
+					-- padrão :  (qualquer letra e numero) + @ + (qualquer letra e numero) + . + (qualquer letra e numero) 
+					IF NEW.emailCli ~ E'^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,4}$' THEN
+					RETURN NEW;
+				ELSE
+					RETURN NULL;
+				END IF;
+				ELSE
+					IF NEW.emailForn ~ E'^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,4}$' THEN
+					RETURN NEW;
+				ELSE
+					RETURN NULL;
+				END IF;
+				END IF;
+			END;
+			$$ LANGUAGE plpgsql;
 
 	CREATE TRIGGER trigger_valida_email
 	BEFORE INSERT OR UPDATE	ON Cliente, Fornecedor FOR EACH ROW
