@@ -118,7 +118,7 @@ INSERT INTO Avaliacao(idProd, idCli, notaAval, comentAval, dataAval) VALUES
 
 SELECT * FROM Avaliacao;
 
--- a) ii. Consultas
+-- a) Consultas
 		-- 1 consulta utilizando BETWEEN
 		SELECT p.nomeProd, p.precoProd, p.quantProd -- Consulta para verificar os produtos da categoria 'Periféricos' custando entre 20 e 50 reais
 		FROM Produto p
