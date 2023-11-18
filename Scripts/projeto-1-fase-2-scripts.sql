@@ -1,10 +1,17 @@
 -- Criação das tabelas
+CREATE TYPE STATUS AS ENUM (
+	'Perdido',
+	'Cancelado',
+	'Bloqueado',
+	'Entregue',
+	'Aguardando confirmação'
+);
 CREATE TABLE Fornecedor( -- ok
 	idForn SERIAL PRIMARY KEY, -- Considere colocar o campo 'idForn' como FK em outras tabelas para futuras funcionalidades
 	nomeForn VARCHAR(40) NOT NULL,
 	cepForn CHAR(8) NOT NULL,
 	emailForn VARCHAR(40) UNIQUE NOT NULL,
-	foneForn VARCHAR(20) NOT NULL,
+	foneForn VARCHAR(20) UNIQUE NOT NULL,
 	tipoForn CHAR(1) NOT NULL CHECK (tipoForn IN ('J', 'F'))
 );
 
@@ -37,7 +44,7 @@ CREATE TABLE Pedido(
 	idCli INT NOT NULL, 
 	dataPed DATE NOT NULL,
 	quantPed INT NOT NULL DEFAULT 1,
-	statusPed VARCHAR(40) NOT NULL, -- Estado atual do pedido (ex.: Se já foi entregue, se está a caminho, se foi coletado pela transportadora, etc...)
+	statusPed STATUS NOT NULL DEFAULT 'Aguardando confirmação', -- Estado atual do pedido (ex.: Se já foi entregue, se está a caminho, se foi coletado pela transportadora, etc...)
 	FOREIGN KEY(idProd) REFERENCES Produto(idProd),
 	FOREIGN KEY(idCli) REFERENCES Cliente(idCli)
 );
@@ -96,10 +103,10 @@ INSERT INTO Cliente(nomeCli, cepCli, emailCli, foneCli, generoCli) VALUES
 SELECT * FROM Cliente;
 
 INSERT INTO Pedido(idProd, idCli, dataPed, quantPed, statusPed) VALUES 
-	(1, 1, '2023-01-15', 1, 'Em andamento'),
-	(2, 2, '2023-02-20', 2,  'Entregue'),
-	(3, 3, '2023-03-10', 10,  'Em processamento'),
-	(3, 3, '2023-03-10', 20,  'Em processamento'),
+	(1, 1, '2023-01-15', 1, 'Entregue'),
+	(2, 2, '2023-02-20', 2,  'Aguardando confirmação'),
+	(3, 3, '2023-03-10', 10,  'Bloqueado'),
+	(3, 3, '2023-03-10', 20,  'Bloqueado'),
 	(1, 3, '2023-01-15', 1,  'Entregue');
 	
 SELECT * FROM Pedido;
@@ -171,7 +178,7 @@ SELECT * FROM Avaliacao;
 		SELECT idped AS Id_pedido, quantped AS Quantidade,
 		(SELECT precoprod FROM Produto WHERE idprod = Pedido.idprod) AS Preço,
 		quantped* (SELECT precoprod FROM Produto WHERE idprod = Pedido.idprod) AS total
-		FROM Pedido; -- trás o valor total de cada pedido, baseado no preço do produto e a quantidade do pedido.
+		FROM Pedido; -- traz o valor total de cada pedido, baseado no preço do produto e a quantidade do pedido.
 -- b) Views
 	
 	
@@ -179,6 +186,31 @@ SELECT * FROM Avaliacao;
 	
 
 
+-- c) Triggers
+
+	CREATE OR REPLACE FUNCTION validar_email()
+	RETURNS TRIGGER AS $$
+	BEGIN
+	  IF TG_TABLE_NAME = 'Cliente' THEN
+	  	-- padrão :  (qualquer letra e numero) + @ + (qualquer letra e numero) + . + (qualquer letra e numero) 
+	  	IF NEW.emailCli ~ E'^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,4}$' THEN
+			RETURN NEW;
+		ELSE
+			RETURN NULL;
+		END IF;
+	  ELSE
+	  	IF NEW.emailForn ~ E'^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,4}$' THEN
+			RETURN NEW;
+		ELSE
+			RETURN NULL;
+		END IF;
+	  END IF;
+	END;
+	$$ LANGUAGE plpgsql;
+
+	CREATE TRIGGER trigger_valida_email
+	BEFORE INSERT OR UPDATE	ON Cliente, Fornecedor FOR EACH ROW
+	EXECUTE FUNCTION validar_email();
 
 
 
@@ -190,5 +222,4 @@ DROP TABLE Produto;
 DROP TABLE Categoria;
 DROP TABLE Fornecedor;
 DROP TABLE Cliente;
-
-
+DROP TYPE STATUS;
