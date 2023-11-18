@@ -1,10 +1,17 @@
 -- Criação das tabelas
+CREATE TYPE STATUS AS ENUM (
+	'Perdido',
+	'Cancelado',
+	'Bloqueado',
+	'Entregue',
+	'Aguardando confirmação'
+);
 CREATE TABLE Fornecedor( -- ok
 	idForn SERIAL PRIMARY KEY, -- Considere colocar o campo 'idForn' como FK em outras tabelas para futuras funcionalidades
 	nomeForn VARCHAR(40) NOT NULL,
 	cepForn CHAR(8) NOT NULL,
 	emailForn VARCHAR(40) UNIQUE NOT NULL,
-	foneForn VARCHAR(20) NOT NULL,
+	foneForn VARCHAR(20) UNIQUE NOT NULL,
 	tipoForn CHAR(1) NOT NULL CHECK (tipoForn IN ('J', 'F'))
 );
 
@@ -16,7 +23,7 @@ CREATE TABLE Categoria( -- ok
 CREATE TABLE Produto( -- ok
 	idProd SERIAL PRIMARY KEY,
 	nomeProd VARCHAR(40) NOT NULL,
-	precoProd NUMERIC NOT NULL,
+	precoProd DECIMAL(6,2) NOT NULL,
 	quantProd INT NOT NULL DEFAULT 0,
 	idCateg INT NOT NULL,
 	FOREIGN KEY (idCateg) REFERENCES Categoria(idCateg)
@@ -37,8 +44,7 @@ CREATE TABLE Pedido(
 	idCli INT NOT NULL, 
 	dataPed DATE NOT NULL,
 	quantPed INT NOT NULL DEFAULT 1,
-	valorProd DECIMAL(6, 2) NOT NULL,
-	statusPed VARCHAR(40) NOT NULL, -- Estado atual do pedido (ex.: Se já foi entregue, se está a caminho, se foi coletado pela transportadora, etc...)
+	statusPed STATUS NOT NULL DEFAULT 'Aguardando confirmação', -- Estado atual do pedido (ex.: Se já foi entregue, se está a caminho, se foi coletado pela transportadora, etc...)
 	FOREIGN KEY(idProd) REFERENCES Produto(idProd),
 	FOREIGN KEY(idCli) REFERENCES Cliente(idCli)
 );
@@ -66,14 +72,16 @@ SELECT * FROM Avaliacao;
 INSERT INTO Fornecedor(nomeForn, cepForn, emailForn, foneForn, tipoForn) VALUES 
 	('TecnoComputers Ltda.', '12345678', 'tecnocomputers@email.com', '123456789', 'J'),
 	('MobileTech Solutions', '87654321', 'mobiletech@email.com', '987654321', 'J'),
-	('Maria Rebeca', '11112222', 'mariarebeca@email.com', '555555555', 'F');
+	('Maria Rebeca', '11112222', 'mariarebeca@email.com', '555555555', 'F'),
+	('House of Mario', '58054755', 'nintendomario@email.com', '656829475', 'J');
 
 SELECT * FROM Fornecedor;
 
 INSERT INTO Categoria(descCateg) VALUES 
 	('Computadores & Notebooks'),
 	('Celulares & Smartphones'),
-	('Periféricos');
+	('Periféricos'),
+	('Videogames');
 
 SELECT * FROM Categoria;
 
@@ -81,7 +89,8 @@ INSERT INTO Produto(nomeProd, precoProd, quantProd, idCateg) VALUES
 	('Computador', 4999.99, 5, 1),
 	('Smartphone', 999.99, 50, 2),
 	('Mouse USB', 29.99, 1000, 3),
-	('Teclado Wireless', 69.99, 200, 3);
+	('Teclado Wireless', 69.99, 200, 3),
+	('Nintendo Switch',2010.00,10,4);
 
 SELECT * FROM Produto;
 
@@ -93,12 +102,12 @@ INSERT INTO Cliente(nomeCli, cepCli, emailCli, foneCli, generoCli) VALUES
 
 SELECT * FROM Cliente;
 
-INSERT INTO Pedido(idProd, idCli, dataPed, quantPed, valorProd, statusPed) VALUES 
-	(1, 1, '2023-01-15', 1, 4999.99, 'Em andamento'),
-	(2, 2, '2023-02-20', 2, 1999.99, 'Entregue'),
-	(3, 3, '2023-03-10', 10, 299.99, 'Em processamento'),
-	(3, 3, '2023-03-10', 20, 1399.99, 'Em processamento'),
-	(1, 3, '2023-01-15', 1, 29.99, 'Entregue');
+INSERT INTO Pedido(idProd, idCli, dataPed, quantPed, statusPed) VALUES 
+	(1, 1, '2023-01-15', 1, 'Entregue'),
+	(2, 2, '2023-02-20', 2,  'Aguardando confirmação'),
+	(3, 3, '2023-03-10', 10,  'Bloqueado'),
+	(3, 3, '2023-03-10', 20,  'Bloqueado'),
+	(1, 3, '2023-01-15', 1,  'Entregue');
 	
 SELECT * FROM Pedido;
 
@@ -165,5 +174,52 @@ SELECT * FROM Avaliacao;
 		SELECT nomeCli, -- Levantamento da quantidade de pedidos por cliente cadastrado no sistema
     	(SELECT COUNT(idPed) FROM Pedido WHERE idCli = Cliente.idCli) AS totalPedidos
 		FROM Cliente;
--- b) Views
 		
+		SELECT idped AS Id_pedido, quantped AS Quantidade,
+		(SELECT precoprod FROM Produto WHERE idprod = Pedido.idprod) AS Preço,
+		quantped* (SELECT precoprod FROM Produto WHERE idprod = Pedido.idprod) AS total
+		FROM Pedido; -- traz o valor total de cada pedido, baseado no preço do produto e a quantidade do pedido.
+-- b) Views
+	
+	
+
+	
+
+
+-- c) Triggers
+
+	CREATE OR REPLACE FUNCTION validar_email()
+	RETURNS TRIGGER AS $$
+	BEGIN
+	  IF TG_TABLE_NAME = 'Cliente' THEN
+	  	-- padrão :  (qualquer letra e numero) + @ + (qualquer letra e numero) + . + (qualquer letra e numero) 
+	  	IF NEW.emailCli ~ E'^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,4}$' THEN
+			RETURN NEW;
+		ELSE
+			RETURN NULL;
+		END IF;
+	  ELSE
+	  	IF NEW.emailForn ~ E'^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,4}$' THEN
+			RETURN NEW;
+		ELSE
+			RETURN NULL;
+		END IF;
+	  END IF;
+	END;
+	$$ LANGUAGE plpgsql;
+
+	CREATE TRIGGER trigger_valida_email
+	BEFORE INSERT OR UPDATE	ON Cliente, Fornecedor FOR EACH ROW
+	EXECUTE FUNCTION validar_email();
+
+
+
+select * from pedido;
+
+DROP TABLE Avaliacao;
+DROP TABLE Pedido;
+DROP TABLE Produto;
+DROP TABLE Categoria;
+DROP TABLE Fornecedor;
+DROP TABLE Cliente;
+DROP TYPE STATUS;
