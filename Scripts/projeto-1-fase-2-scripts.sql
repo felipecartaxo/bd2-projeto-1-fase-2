@@ -274,7 +274,7 @@ SELECT * FROM Avaliacao;
 			-- daí cada tier teria um número x de dias para ser entregue
 				
 		-- f) Triggers
-			CREATE OR REPLACE FUNCTION validar_email()
+			CREATE OR REPLACE FUNCTION ValidarEmail()
 			RETURNS TRIGGER AS $$
 			BEGIN
 				IF TG_TABLE_NAME = 'Cliente' THEN
@@ -294,13 +294,40 @@ SELECT * FROM Avaliacao;
 			END;
 			$$ LANGUAGE plpgsql;
 
-	CREATE TRIGGER trigger_valida_email
-	BEFORE INSERT OR UPDATE	ON Cliente, Fornecedor FOR EACH ROW
-	EXECUTE FUNCTION validar_email();
+			CREATE TRIGGER TriggerValidarEmail
+			BEFORE INSERT OR UPDATE	ON Cliente, Fornecedor FOR EACH ROW
+			EXECUTE FUNCTION ValidarEmail();
+			
+			--Verifica se a categoria que está sendo referenciada no produto existe na tabela categoria, caso não exista, irá criá-la
+			CREATE OR REPLACE FUNCTION InsertViewCategoria()
+			RETURNS TRIGGER AS $$
+			DECLARE 
+				new_idcateg INTEGER;
+			BEGIN
+				SELECT idcateg INTO new_idcateg FROM Categoria Ca
+				WHERE Ca.desccateg = NEW."Categoria";
+				IF NOT FOUND THEN
+					INSERT INTO Categoria(desccateg)
+					VALUES(NEW."Categoria") RETURNING idcateg INTO new_idcateg;
+				END IF;
+				INSERT INTO Produto(nomeProd, precoProd, quantProd, idCateg) 
+				VALUES (NEW."Nome", NEW."Preço" ,NEW."Quantidade em estoque", new_idcateg);
+				RETURN NEW;
+			END;
+			$$ LANGUAGE plpgsql;
+				
+			Create trigger InsListaProdutos
+			Instead of insert on ListaProdutos for each row
+			execute procedure InsertViewCategoria();
+			
+			insert into ListaProdutos( "Nome", "Preço", "Quantidade em estoque", "Categoria")
+			values ('Fritadeira sem óleo', 70.00, 60, 'Eletrodomésticos');
 
 
-
+select * from ListaProdutos;
 select * from pedido;
+SELECT * FROM PRODUTO;
+select * from categoria;
 
 DROP TABLE Avaliacao;
 DROP TABLE Pedido;
