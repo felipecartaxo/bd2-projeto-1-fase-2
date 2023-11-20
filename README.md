@@ -84,11 +84,11 @@ intersect) ✅
 
 - Identificar 2 exemplos de consultas dentro do contexto da aplicação (questão 2.a) que
 possam e devam ser melhoradas. Reescrevê-las. Justificar a reescrita.
-### ❌ e. Funções e procedures armazenadas:
+### ✅ e. Funções e procedures armazenadas:
 - 1 função que use SUM, MAX, MIN, AVG ou COUNT
 - 2 funções e 1 procedure com justificativa semântica, conforme os requisitos da aplicação
 **Pelo menos uma função ou procedure deve ter tratamento de exceção** e 
 **As funções desta seção não são as mesmas das funções de triggers**
 
 ### ⚠️ f. Triggers:
-- 3 diferentes triggers com justificativa semântica, de acordo com os requisitos da aplicação. ⚠️ 2/3
+- 3 diferentes triggers com justificativa semântica, de acordo com os requisitos da aplicação. ✅

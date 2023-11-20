@@ -381,34 +381,7 @@ SELECT * FROM Avaliacao;
 		SELECT calcular_frete(2);
 		DROP FUNCTION calcular_frete;
 		
-		CREATE OR REPLACE FUNCTION verificar_estoque_disponivel(IN v_idProduto INT, IN v_quantidadePedida INT) -- Função para verificar se há disponibilidade de um determinado produto em estoque
-			RETURNS BOOLEAN AS $$
-		DECLARE
-				v_quantidadeEstoque INT;
-				v_estoqueDisponivel BOOLEAN;
-		BEGIN
-				SELECT quantProd
-				INTO v_quantidadeEstoque
-				FROM Produto
-				WHERE idProd = v_idProduto;
-				
-				IF v_quantidadeEstoque >= v_quantidadePedida THEN
-						v_estoqueDisponivel := TRUE;
-						RAISE NOTICE 'É possível realizar o pedido';
-						RAISE NOTICE 'Quantidade no estoque: %', v_quantidadeEstoque;
-						RAISE NOTICE 'Quantidade solicitada: %', v_quantidadePedida;
-				ELSE
-						v_estoqueDisponivel := FALSE;
-						RAISE EXCEPTION 'Não é possível realizar o pedido';
-				END IF;
-
-				RETURN v_estoqueDisponivel;
-		END;
-		$$ LANGUAGE plpgsql;
 		
-		SELECT verificar_estoque_disponivel(1, 10); -- false
-		SELECT verificar_estoque_disponivel(4, 10); -- true
-		DROP FUNCTION verificar_estoque_disponivel;
 		
 		-- 1 função que use SUM, MAX, MIN, AVG ou COUNT
 		CREATE OR REPLACE FUNCTION quantidade_pedidos_cliente(IN v_idCliente INT) -- Calcula a quantidade total de pedidos de um determinado cliente
@@ -472,6 +445,8 @@ SELECT * FROM Avaliacao;
 		SELECT * FROM Produto; -- Verifique se a quantidade em estoque foi atualizada
 
 		-- f) Triggers
+		
+			-- verifica se o email está no padrão
 			CREATE OR REPLACE FUNCTION ValidarEmail()
 			RETURNS TRIGGER AS $$
 			BEGIN
@@ -520,6 +495,35 @@ SELECT * FROM Avaliacao;
 			
 			insert into ListaProdutos( "Nome", "Preço", "Quantidade em estoque", "Categoria")
 			values ('Fritadeira sem óleo', 70.00, 60, 'Eletrodomésticos');
+			
+			--verifica se o estoque está dentro do pedido
+			CREATE OR REPLACE FUNCTION verificar_estoque_trigger()
+			RETURNS TRIGGER AS $$
+			DECLARE
+				v_quantidadeEstoque INT;
+			BEGIN
+				SELECT quantProd INTO v_quantidadeEstoque FROM Produto
+				WHERE idProd = NEW.idProd;
+				IF v_quantidadeEstoque >= NEW.quantPed THEN
+					RETURN NEW;
+				ELSE
+					RAISE EXCEPTION 'Falta de estoque.';
+					RETURN NULL;
+				END IF;					
+			END;
+			$$ LANGUAGE plpgsql;
+		
+			CREATE TRIGGER trigger_verificar_estoque
+			BEFORE INSERT OR UPDATE ON Pedido FOR EACH ROW
+			EXECUTE FUNCTION verificar_estoque_trigger();
+			
+			INSERT INTO Pedido(idProd, idCli, dataPed, tipoEntrega, quantPed, statusPed) VALUES 
+			(1, 1, '2023-01-15', 'Drone', 1000, 'Entregue');
+			
+			INSERT INTO Pedido(idProd, idCli, dataPed, tipoEntrega, quantPed, statusPed) VALUES 
+			(1, 1, '2023-01-15', 'Drone', 1, 'Entregue');
+			
+			
 
 
 select * from ListaProdutos;
