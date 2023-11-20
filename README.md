@@ -80,9 +80,9 @@ intersect) ✅
 ### ✅ c. Índices:
 - 3 índices para campos indicados com justificativa dentro do contexto das consultas formuladas na questão 3a.✅
 
-### ❌ d. Reescrita de consultas 
+### ✅ d. Reescrita de consultas 
 
- Identificar 2 exemplos de consultas dentro do contexto da aplicação (questão 2.a) que
+- Identificar 2 exemplos de consultas dentro do contexto da aplicação (questão 2.a) que
 possam e devam ser melhoradas. Reescrevê-las. Justificar a reescrita.
 ### ❌ e. Funções e procedures armazenadas:
 - 1 função que use SUM, MAX, MIN, AVG ou COUNT

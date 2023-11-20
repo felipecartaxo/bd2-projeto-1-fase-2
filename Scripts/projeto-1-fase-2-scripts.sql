@@ -251,8 +251,7 @@ SELECT * FROM Avaliacao;
 				c.emailCli AS "Email",
 				pe.quantPed AS "Quantidade de itens",
 				(p.precoProd * pe.quantPed) AS "Valor total"
-		FROM
-				Pedido pe
+		FROM Pedido pe
 		JOIN Cliente c ON pe.idCli = c.idCli
 		JOIN Produto p ON pe.idProd = p.idProd;
 		
@@ -270,7 +269,80 @@ SELECT * FROM Avaliacao;
 		CREATE INDEX idx_precoProd ON Produto(precoProd); -- Também muito utilizado em filtros
 		
 		-- d) Reescrita de consultas
-		-- ???
+		/*
+		SELECT f.nomeForn, p.nomeProd, p.precoProd, p.quantProd -- Consulta para verificar todos os produtos de uma determinada fornecedora
+		FROM Produto p
+		JOIN Fornecedor f
+		ON p.idForn = f.idForn
+		WHERE f.idForn = 1;
+		Motivo: juntar duas tabelas que são consideravelmente grandes para pegar um nome não é uma boa estratégia
+		*/
+		SELECT
+		(SELECT nomeForn FROM Fornecedor WHERE idForn = 1) AS nomeForn,
+			p.nomeProd,
+			p.precoProd,
+			p.quantProd
+		FROM Produto p
+		WHERE p.idForn = (SELECT idForn FROM Fornecedor WHERE idForn = 1);
+		
+		/*
+		SELECT 
+			pe.idPed as "Número do pedido", 
+			c.nomeCli as "Nome do cliente", 
+			pe.dataPed as "Data do pedido", 
+			p.precoProd as "Preço", 
+			pe.statusPed as "Status do pedido" -- Verifica todos os pedidos que foram ENTREGUES de um determinado cliente
+		FROM Pedido pe
+		JOIN Cliente c
+		ON pe.idCli = c.idCli
+		JOIN Produto p
+		on p.idProd = pe.idProd
+		WHERE c.nomeCli = 'João' AND pe.statusPed = 'Entregue';
+		
+		versão piorada:
+		SELECT -- Verifica todos os pedidos que foram ENTREGUES de um determinado cliente
+			pe.idPed as "Número do pedido",
+			(SELECT nomeCli FROM Cliente WHERE idCli = pe.idCli) as "Nome do cliente",
+			pe.dataPed as "Data do pedido",
+			(SELECT precoProd FROM Produto WHERE idProd = pe.idProd) as "Preço",
+			pe.statusPed as "Status do pedido"
+		FROM Pedido pe
+		WHERE pe.statusPed = 'Entregue' AND pe.idCli = (SELECT idCli FROM Cliente WHERE nomeCli = 'João');
+		*/
+		
+		
+		/*
+		SELECT
+			nomeCli AS "Nome do Cliente",
+			(SELECT COUNT(idPed) FROM Pedido WHERE idCli = Cliente.idCli) AS "Número de pedidos"
+		FROM Cliente;
+
+		--versão piorada
+		SELECT
+			c.nomeCli AS "Nome do Cliente",
+			COUNT(p.idPed) AS "Número de pedidos"
+		FROM Cliente c
+		LEFT JOIN Pedido p ON c.idCli = p.idCli
+		GROUP BY c.nomeCli;
+		*/
+		
+		/*
+		SELECT idped AS Id_pedido, quantped AS Quantidade,
+		(SELECT precoprod FROM Produto WHERE idprod = Pedido.idprod) AS Preço,
+		quantped* (SELECT precoprod FROM Produto WHERE idprod = Pedido.idprod) AS total
+		FROM Pedido; -- traz o valor total de cada pedido, baseado no preço do produto e a quantidade do pedido
+		
+		Motivo: No exemplo de subquery, é feito mais duas consultas de select, podendo ser um potencial problema, caso a tabela fique maior
+		*/
+		
+		SELECT
+			p.idPed AS Id_pedido,
+			p.quantPed AS Quantidade,
+			pr.precoprod AS Preço,
+			p.quantPed * pr.precoprod AS total
+		FROM Pedido p
+		JOIN Produto pr ON p.idProd = pr.idProd;
+
 		
 		-- e) Funções e procedures
 		
@@ -455,6 +527,7 @@ select * from pedido;
 SELECT * FROM PRODUTO;
 select * from categoria;
 
+DROP VIEW ListaProdutos;
 DROP TABLE Avaliacao;
 DROP TABLE Pedido;
 DROP TABLE Produto;
