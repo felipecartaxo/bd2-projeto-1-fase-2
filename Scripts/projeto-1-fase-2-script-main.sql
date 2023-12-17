@@ -1,6 +1,6 @@
 -- a) Consultas
 
-		-- 1 consulta utilizando BETWEEN
+		-- Consultas utilizando BETWEEN
 		SELECT p.nomeProd, p.precoProd, p.quantProd -- Consulta para verificar os produtos da categoria 'Periféricos' custando entre 20 e 50 reais
 		FROM Produto p
 		JOIN Categoria c ON p.idCateg = c.idCateg
@@ -9,22 +9,22 @@
 		
 		SELECT p.nomeProd as "Nome do produto", p.precoProd as "Preço", p.quantProd as "Quantidade em estoque", c.descCateg as "Categoria"-- Levantamente dos pedidos com "sobra" no estoque (para realização de queima de estoque na Black Friday)
 		FROM Produto p
-		join Categoria c
-		on p.idCateg = c.idCateg
+		JOIN Categoria c
+		ON p.idCateg = c.idCateg
 		WHERE quantProd BETWEEN 100 AND 1000;
 		
 		SELECT * -- Levantamentos dos pedidos realizados em Janeiro de 2023
 		FROM Pedido
 		WHERE dataPed BETWEEN '2023-01-01' AND '2023-01-31';
 
-		-- 3 consultas utilizando JOIN
+		-- Consultas utilizando JOIN
 		SELECT p.nomeProd as "Nome do produto", p.precoProd as "Preço", c.descCateg as "Categoria", p.quantProd as "Quantidade em estoque" -- Verifica quais produtos estão na categoria 'Periféricos'
 		FROM Produto p
 		JOIN Categoria c ON p.idCateg = c.idCateg
 		WHERE c.descCateg = 'Periféricos'
 		ORDER BY p.precoProd;
 		
-		SELECT pe.idPed as "Número do pedido", c.nomeCli as "Nome do cliente", pe.dataPed as "Data do pedido", p.precoProd as "Preço", pe.statusPed as "Status do pedido" -- Verifica todos os pedidos que foram ENTREGUES do cliente 'João'
+		SELECT pe.idPed as "Número do pedido", c.nomeCli as "Nome do cliente", pe.dataPed as "Data do pedido", p.precoProd as "Preço", pe.statusPed as "Status do pedido" -- Verifica todos os pedidos do cliente 'João' que foram ENTREGUES
 		FROM Pedido pe
 		JOIN Cliente c
 		ON pe.idCli = c.idCli
@@ -38,7 +38,7 @@
 		ON p.idForn = f.idForn
 		WHERE f.idForn = 1;
 		
-		-- 1 consulta com LEFT JOIN
+		-- Consultas com LEFT JOIN
 		SELECT p.idProd AS "Número do produto", p.nomeProd AS "Nome do produto", p.precoProd AS "Preço do produto", p.quantProd AS "Quantidade em estoque", f.nomeForn AS "Nome do fornecedor", c.descCateg AS "Categoria" -- Lista todos os produtos cadastrados na plataforma
 		FROM Produto p
 		LEFT JOIN Categoria c ON p.idCateg = c.idCateg
@@ -49,7 +49,7 @@
 		LEFT JOIN Produto p ON p.idProd = pe.idProd
 		LEFT JOIN Cliente c ON pe.idCli = c.idCli;
 		
-		-- 2 consultas usando GROUP BY
+		-- Consultas usando GROUP BY
 		SELECT p.nomeProd AS "Nome do produto", p.precoProd AS "Preço do produto", COUNT(pe.idPed) AS totalPedidos -- Retorna os produtos mais procurados da plataforma
 		FROM Produto p
 		JOIN Pedido pe ON p.idProd = pe.idProd

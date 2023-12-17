@@ -133,6 +133,7 @@ INSERT INTO Avaliacao(idProd, idCli, notaAval, comentAval, dataAval) VALUES -- o
 	(9, 7, 0.0, 'Paguei caro, mas veio com defeito e encontrei dificuldades para entrar em contato com a fornecedora...', '2023-01-20'),
 	(10, 8, 5.0, 'Dei de presente para os meus filhos e eles adoraram!!!', '2023-04-30');
 
+-- Verificando as tabelas e os inserts
 SELECT * FROM Fornecedor;
 SELECT * FROM Categoria;
 SELECT * FROM Produto;
